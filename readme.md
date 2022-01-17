@@ -224,3 +224,63 @@
         - naming
             - {나의 도커 아이디}/{저장소, 프로젝트 이름}:{버전}
 - 섹션 5. 도커를 이용한 간단한 Node.js 어플 만들기
+    - 간단한 node.js 어플리케이션을 작성해서 docker build를 하게 되면 package.json이 있음에도 없다는 에러가 뜨게 됨.
+    - 그 이유는 Dockerfile에서 임시 컨테이너를 만들 때 베이스 이미지에 있는 파일 스냅샷이 임시 컨테이너의 하드디스크에 들어가는데, Node.js의 파일 스냅샷에는 package.json이 없기 때문.
+        - COPY를 이용해서 컨테이너 안으로 넣어주어야 함.
+        
+        ```docker
+        COPY {복사할 파일} {복사 될 경로}
+        ```
+        
+    - COPY 후 이미지를 실행시켜도 에러가 나게 됨
+        - 네트워크도 로컬 네트워크에 있던 것을 컨테이너 내부에 있는 네트워크에 연결시켜줘야 하기 때문!
+        - 포트 매핑을 시켜줘야 함
+        
+        ```docker
+        docker run -p {브라우저 포트}:{컨테이너 포트} image-name
+        ```
+        
+    - WORKDIR
+        - 이미지 안에서 어플리케이션 소스 코드를 가지고 있을 디렉토리 생성
+        - working directory가 있어야 하는 이유
+            - 설정을 하지 않은 경우
+            - root 디렉토리에 모든 소스코드, 파일들이 난잡하게 저장
+                - 정돈이 안되는 문제
+            - 원래 이미지에 있던 파일과 파일명이 겹치는 문제
+                - 덮어씌워져서 위험
+        
+        ```docker
+        WORKDIR {path}
+        ```
+        
+    - 소스 코드가 변경될 때마다 다시 빌드하는 방식의 문제점
+        - 소스 변경으로 재빌드 시 효율적인 방법
+        
+        ```docker
+        # 기존
+        COPY ./ ./
+        RUN npm install
+        
+        # 변경 후
+        COPY package.json ./
+        RUN npm install
+        COPY ./ ./
+        ```
+        
+        - 기존에는 소스코드 어느 부분이 변경이 생겨도 다시 install을 했지만, 변경 후는 종속성에 변경이 생겨야지만 install
+    - 현재 방식은 변경이 생길 때마다 다시 build, run 해야 함
+        - 이미지를 build할 때 COPY를 통해서 소스코드를 가져오기 때문
+        - Docker Volume
+            - COPY하지 않고 로컬에 있는 파일을 참조(mapping)
+            - -v option
+            
+            ```docker
+            -v /usr/src/app/node_modules
+            # 로컬에 node_modules가 없으므로 매핑하지 말라는 의미
+            
+            -v %cd%:/usr/src/app
+            # 나머지 파일은 현재 디렉토리에서 참조하라는 의미
+            
+            docker run -d -p 5000:8080 -v /usr/src/app/node_modules -v %cd%:/usr/src/app {이미지 id}
+            # -d : 콘솔에서 빠져나오는 옵션
+            ```
