@@ -146,7 +146,7 @@
     - docker rm id/name
     - 중지를 먼저 해야 삭제 가능
     - 모든 컨테이너 삭제
-        - docker rm ‘docker ps -a -q’
+        - docker rm $(docker ps -a -q)
     - 이미지 삭제
         - docker rmi id
     - 컨테이너, 이미지, 네트워크 모두 삭제
@@ -284,3 +284,22 @@
             docker run -d -p 5000:8080 -v /usr/src/app/node_modules -v %cd%:/usr/src/app {이미지 id}
             # -d : 콘솔에서 빠져나오는 옵션
             ```
+            
+- 섹션 6. Docker Compose
+    - Docker Compose란
+        - 다중 컨테이너 도커 어플리케이션을 정의하고 실행하기 위한 도구
+    - docker compose를 사용하지 않으면 서로 다른 컨테이너가 통신할 수 없음
+        - docker-compose.yml 파일 구조
+            - version: 도커 컴포즈 버전
+            - services: 컨테이너들
+                - container_name: 컨테이너 이름
+                    - image: 컨테이너에서 사용하는 이미지
+                    - build: 현 디렉토리에 있는 Dockerfile
+                    - ports: 포트 매핑 - 로컬포트:컨테이너포트
+    
+    ```docker
+    docker-compose up // 실행
+    	—build // 옵션으로 빌드 가능
+    	-d // 백그라운드 실행
+    docker-compose down // 중단
+    ```
